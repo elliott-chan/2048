@@ -42,8 +42,8 @@ def apply_style(root: tk.Tk) -> None:
 
     COLORS.update(
         {
-            "bg": "#0c1220",
-            "card": "#161e31",
+            "bg": "#94a3b8",
+            "card": "#ffffff",
             "muted": "#a3b3cc",
             "text": "#e9eef9",
             "accent1": "#00b8d9",
@@ -114,7 +114,31 @@ class GameFrame(ttk.Frame):
 
         self.update_visuals()
 
+    def reset_game(self):
+        if hasattr(self, 'overlay') and self.overlay:
+            self.overlay.destroy()
+            self.overlay = None
+        self.game_logic = Game2048(size=4)
+        self.update_visuals()
+        return True
+    
+    def game_over(self, status):
+        self.overlay = tk.Frame(self, bg="#686262", width=400, height=400)
+        self.overlay.place(relx=0.5, rely=0.5, anchor='center', width=420, height=420)
+        msg_text = "WINNER!" if status == "WIN" else "GAME OVER!"
+        msg_color = COLORS["success"] if status == "WIN" else COLORS["danger"]
+        msg = tk.Label(self.overlay, text=msg_text, font=("Arial", 32, "bold"), bg="#686262", fg=msg_color)
+        msg.pack(expand=True)
+        btn = tk.Button(self.overlay, text="Restart", font=("Arial", 16, "bold"), bg=COLORS["accent"], fg=COLORS["accent_fg"], command=self.reset_game)
+        btn.pack(pady=20)
+
     def update_visuals(self):
+        status = self.game_logic.check_status()
+        if status in ["GAME OVER", "WIN"]:
+            self.game_over(status)
+        elif status == "WIN":
+            self.game_over("WIN")
+        
         for r in range(4):
             for c in range(4):
                 value = self.game_logic.board[r][c]
@@ -155,7 +179,8 @@ class App:
             'Left': self.game_frame.game_logic.move_left,
             'Down': self.game_frame.game_logic.move_down,
             'Right': self.game_frame.game_logic.move_right,
-            'q': self.master.quit
+            'q': self.master.quit,
+            'r': self.game_frame.reset_game
         }
 
         action = key_map.get(event.keysym)
