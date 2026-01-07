@@ -98,7 +98,7 @@ class GameFrame(ttk.Frame):
             row_labels = []
             for c in range(4):
                 cell_container = tk.Frame(self, bg='#bbada0', width=TILE_SIZE, height=TILE_SIZE)
-                cell_container.grid(row=r, column=c, padx=5, pady=5)
+                cell_container.grid(row=r+1, column=c, padx=5, pady=5)
                 cell_container.grid_propagate(False)
                 cell_container.config(width=TILE_SIZE, height=TILE_SIZE)
                 row_containers.append(cell_container)
@@ -106,6 +106,9 @@ class GameFrame(ttk.Frame):
                 row_labels.append(label)
             self.cell_containers.append(row_containers)
             self.labels.append(row_labels)
+
+        self.score_label = tk.Label(self, text=f"Score: {self.game_logic.score}", font=("Arial", 24, "bold"))
+        self.score_label.grid(row=0, column=0, columnspan=4, pady=(0, 10))
 
         # Prevent grid stretching so tiles remain square
         for i in range(4):
@@ -157,7 +160,10 @@ class GameFrame(ttk.Frame):
                     # Place the label as a square, slightly smaller than the container
                     label.place(relx=0.5, rely=0.5, anchor='center', width=75, height=75)
                     cell_container.config(bg='#bbada0')
+        self.update_score()
 
+    def update_score(self):
+        self.score_label.config(text=f"Score: {self.game_logic.score}")
 # App
 class App:
     def __init__(self, master):
