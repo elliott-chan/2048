@@ -69,17 +69,28 @@ class Game2048():
         print(f"[DEBUG] Added tile {tile_value} at position ({r}, {c})")
     
     def check_status(self):
-        for row in self.board:
-            if None in row:
-                return "ONGOING"
+        # First, check for a winning tile anywhere on the board
         for r in range(self.size):
-            for c in range(self.size - 1):
-                if self.board[r][c] == self.board[r][c + 1]:
+            for c in range(self.size):
+                if self.board[r][c] == 2048:
+                    return "WIN"
+
+        has_empty = False
+        # Check for empty cells and possible merges (right and down)
+        for r in range(self.size):
+            for c in range(self.size):
+                if self.board[r][c] is None:
+                    has_empty = True
+                # check right neighbor
+                if c + 1 < self.size and self.board[r][c] is not None and self.board[r][c] == self.board[r][c + 1]:
                     return "ONGOING"
-        for c in range(self.size):
-            for r in range(self.size - 1):
-                if self.board[r][c] == self.board[r + 1][c]:
+                # check down neighbor
+                if r + 1 < self.size and self.board[r][c] is not None and self.board[r][c] == self.board[r + 1][c]:
                     return "ONGOING"
+
+        if has_empty:
+            return "ONGOING"
+
         return "GAME OVER"
 
 def main():

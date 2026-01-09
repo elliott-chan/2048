@@ -102,12 +102,12 @@ class GameFrame(ttk.Frame):
                 cell_container.grid_propagate(False)
                 cell_container.config(width=TILE_SIZE, height=TILE_SIZE)
                 row_containers.append(cell_container)
-                label = tk.Label(cell_container, font=("Arial", 20, "bold"))
+                label = tk.Label(cell_container, font=("Arial", 20, "bold"), bg='#bbada0', fg='#776e65')
                 row_labels.append(label)
             self.cell_containers.append(row_containers)
             self.labels.append(row_labels)
 
-        self.score_label = tk.Label(self, text=f"Score: {self.game_logic.score}", font=("Arial", 24, "bold"))
+        self.score_label = tk.Label(self, text=f"Score: {self.game_logic.score}", font=("Arial", 24, "bold"), bg=COLORS["bg"], fg=COLORS["text"])
         self.score_label.grid(row=0, column=0, columnspan=4, pady=(0, 10))
 
         # Prevent grid stretching so tiles remain square
@@ -147,19 +147,20 @@ class GameFrame(ttk.Frame):
                 value = self.game_logic.board[r][c]
                 cell_container = self.cell_containers[r][c]
                 label = self.labels[r][c]
-                # Remove any previous label from the cell
-                label.place_forget()
+                cell_container.config(bg='#bbada0')
+                
                 if value is None:
-                    # Only show the background tile, no number tile
-                    cell_container.config(bg='#bbada0')
+                    # Hide tile by setting empty text
+                    label.config(text='', bg='#bbada0', fg='#bbada0')
+                    if label.winfo_ismapped() == 0:
+                        label.place(relx=0.5, rely=0.5, anchor='center', width=75, height=75)
                 else:
                     # Show a larger number tile centered in the background tile
                     bg_color = TILE_COLORS.get(value, '#3c3a32')
                     fg_color = "#f9f6f2" if value > 4 else "#776e65"
                     label.config(text=str(value), bg=bg_color, fg=fg_color, font=("Arial", 20, "bold"))
-                    # Place the label as a square, slightly smaller than the container
-                    label.place(relx=0.5, rely=0.5, anchor='center', width=75, height=75)
-                    cell_container.config(bg='#bbada0')
+                    if label.winfo_ismapped() == 0:
+                        label.place(relx=0.5, rely=0.5, anchor='center', width=75, height=75)
         self.update_score()
 
     def update_score(self):
