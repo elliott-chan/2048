@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from game_logic import Game2048
+from game_AI_local import GameAI
 
 # Themes
 COLORS = {
@@ -71,9 +72,9 @@ def apply_style(root: tk.Tk) -> None:
         font=FONT_LG,
     )
 
-def center_window(root: tk.Tk, w=900, h=640):
+def center_window(root: tk.Tk, w=580, h=530):
     root.geometry(f"{w}x{h}")
-    root.minsize(820, 560)
+    root.minsize(550, 480)
     root.update_idletasks()
     sw, sh = root.winfo_screenwidth(), root.winfo_screenheight()
     x = int((sw - w) / 2)
@@ -83,8 +84,7 @@ def center_window(root: tk.Tk, w=900, h=640):
 class GameFrame(ttk.Frame):
     def __init__(self, root: tk.Tk):
         super().__init__(root)
-        # Center the board in the parent window
-        self.grid(row=0, column=0, sticky="nsew", padx=20, pady=20)
+        self.grid(row=0, column=0, sticky="nw", padx=8, pady=12)
         root.grid_rowconfigure(0, weight=1)
         root.grid_columnconfigure(0, weight=1)
 
@@ -123,6 +123,11 @@ class GameFrame(ttk.Frame):
             self.overlay = None
         self.game_logic = Game2048(size=4)
         self.update_visuals()
+        # Notify other UI parts (like the sidebar) that the game has been reset
+        try:
+            self.event_generate("<<GameReset>>")
+        except Exception:
+            pass
         return True
     
     def game_over(self, status):
@@ -165,6 +170,57 @@ class GameFrame(ttk.Frame):
 
     def update_score(self):
         self.score_label.config(text=f"Score: {self.game_logic.score}")
+
+class Sidebar(ttk.Frame):
+    def __init__(self, parent: tk.Widget, game_frame: GameFrame):
+        super().__init__(parent)
+        self.game_frame = game_frame
+        self.grid(row=0, column=1, sticky="n", padx=(6, 12), pady=(230, 12))
+
+        # Hint button
+        hint_btn = tk.Button(self, text="Get Hint", font=(FONT_FAMILY[0], 12, "bold"), bg=COLORS["accent"], fg=COLORS["accent_fg"], command=self.on_hint)
+        hint_btn.pack(fill='x', pady=(0, 3))
+
+        # Result label (shows direction)
+        self.result_label = tk.Label(self, text="--", font=(FONT_FAMILY[0], 18, "bold"), bg=COLORS["card"], fg=COLORS["accent"])
+        self.result_label.pack(anchor='center', pady=8)
+
+    def on_hint(self):
+        try:
+            board = self.game_frame.game_logic.board
+            # Call GameAI to get suggested board and validity
+            suggested_board, valid = GameAI(board, 10, 5)
+
+            if not valid:
+                self.result_label.config(text="No moves", fg=COLORS["danger"])
+                return
+
+            # Determine which direction was moved by comparing original board to suggested board
+            direction = self._detect_direction(board, suggested_board)
+            self.result_label.config(text=direction.upper(), fg=COLORS["success"])
+        except Exception as e:
+            messagebox.showerror('Hint Error', f'Failed to get hint: {e}')
+
+    def _detect_direction(self, original, suggested):
+        """Detect which direction (up/down/left/right) was applied to the board."""
+        # Check if the board changed horizontally (left/right) or vertically (up/down)
+        # by comparing positions of tiles
+        import copy
+        temp = Game2048(size=4)
+        temp.board = copy.deepcopy(original)
+        
+        # Try each direction and see which one matches the suggested board
+        directions = [('up', temp.move_up), ('down', temp.move_down), 
+                      ('left', temp.move_left), ('right', temp.move_right)]
+        
+        for direction_name, move_func in directions:
+            temp_board = copy.deepcopy(original)
+            temp.board = temp_board
+            move_func()
+            if temp.board == suggested:
+                return direction_name
+        
+        return "?"
 # App
 class App:
     def __init__(self, master):
@@ -173,9 +229,30 @@ class App:
         center_window(master)
         master.title("2048")
 
-        self.game_frame = GameFrame(master)
+        # Main container to hold game board (left) and sidebar (right)
+        main_frame = ttk.Frame(master)
+        main_frame.grid(row=0, column=0, sticky="nsew")
+        master.grid_rowconfigure(0, weight=1)
+        master.grid_columnconfigure(0, weight=1)
+
+        self.game_frame = GameFrame(main_frame)
+        self.sidebar = Sidebar(main_frame, self.game_frame)
+
+        # Keep columns compact so sidebar stays close to the board
+        main_frame.grid_columnconfigure(0, weight=0)
+        main_frame.grid_columnconfigure(1, weight=0)
+
+        # Listen for game reset events so we can clear the hint
+        main_frame.bind("<<GameReset>>", lambda e: self._clear_hint())
 
         self.master.bind("<Key>", self.on_key)
+
+        # helper to clear hint label (used by reset event)
+        def _clear_hint(e=None):
+            if hasattr(self, 'sidebar') and self.sidebar:
+                self.sidebar.result_label.config(text="--", fg=COLORS["accent"])
+        self._clear_hint = _clear_hint
+
     def on_key(self, event):
         key_map = {
             'w': self.game_frame.game_logic.move_up,
@@ -196,6 +273,9 @@ class App:
             if moved:
                 self.game_frame.game_logic.add_random_tile()
                 self.game_frame.update_visuals()
+                # Clear previous hint to avoid confusion after the player moves
+                if hasattr(self, 'sidebar') and self.sidebar:
+                    self.sidebar.result_label.config(text="--", fg=COLORS["accent"])
 
 if __name__ == "__main__":
     root = tk.Tk()
