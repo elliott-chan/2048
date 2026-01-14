@@ -1,21 +1,10 @@
-"""Simple Monte-Carlo Game AI compatible with the current Game2048 API.
-
-Given a board (list of lists), GameAI returns a board after the best first move (before the
-random new tile is added) and a boolean indicating whether a valid move was found.
-
-This implementation performs `searches_per_move` random playouts of up to `search_length`
-moves for each candidate first move and selects the move with the best average resulting score.
-"""
-
 import copy
 import random
 from game_logic import Game2048
 
 
 def _apply_move(board, direction):
-    """Apply a direction move to a fresh Game2048 initialized with `board`.
-    Returns (game_instance, moved_bool).
-    """
+    # Apply a direction move to a fresh Game2048 initialized with `board`.
     g = Game2048(size=len(board))
     g.board = copy.deepcopy(board)
     g.score = 0
@@ -24,9 +13,6 @@ def _apply_move(board, direction):
 
 
 def _any_move_possible(game):
-    """Check whether any move is possible from the current game state.
-    This is done by trying moves on copies so the real game is not mutated.
-    """
     for d in ("up", "down", "left", "right"):
         gtest = Game2048(size=game.size)
         gtest.board = copy.deepcopy(game.board)
@@ -36,9 +22,6 @@ def _any_move_possible(game):
 
 
 def _simulate_random_playout(game, max_moves):
-    """From a starting Game2048 instance `game`, play up to `max_moves` random valid moves.
-    Returns the total score gained during the playout (i.e., final_score - start_score).
-    """
     sim = Game2048(size=game.size)
     sim.board = copy.deepcopy(game.board)
     sim.score = game.score
@@ -62,18 +45,6 @@ def _simulate_random_playout(game, max_moves):
 
 
 def GameAI(board, searches_per_move=50, search_length=10):
-    """Main entry point used by the rest of the project.
-
-    Args:
-        board: list[list[int|None]] current board state
-        searches_per_move: number of random playouts to run for each candidate first move
-        search_length: max moves to play in each playout
-
-    Returns:
-        (suggested_board, valid) where suggested_board is the board AFTER the chosen
-        first move (but BEFORE the automatic random tile is added), and `valid` is True
-        if a move was found.
-    """
     best_board = None
     best_score = -float("inf")
 

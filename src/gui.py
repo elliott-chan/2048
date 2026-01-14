@@ -144,8 +144,6 @@ class GameFrame(ttk.Frame):
         status = self.game_logic.check_status()
         if status in ["GAME OVER", "WIN"]:
             self.game_over(status)
-        elif status == "WIN":
-            self.game_over("WIN")
         
         for r in range(4):
             for c in range(4):
@@ -178,7 +176,7 @@ class Sidebar(ttk.Frame):
         self.grid(row=0, column=1, sticky="n", padx=(6, 12), pady=(230, 12))
 
         # Hint button
-        hint_btn = tk.Button(self, text="Get Hint", font=(FONT_FAMILY[0], 12, "bold"), bg=COLORS["accent"], fg=COLORS["accent_fg"], command=self.on_hint)
+        hint_btn = tk.Button(self, text="Suggestion", font=(FONT_FAMILY[0], 12, "bold"), bg=COLORS["accent"], fg=COLORS["accent_fg"], command=self.on_hint)
         hint_btn.pack(fill='x', pady=(0, 3))
 
         # Result label (shows direction)
@@ -254,6 +252,11 @@ class App:
         self._clear_hint = _clear_hint
 
     def on_key(self, event):
+        # If a game-over/win overlay is present, ignore move keys (allow reset 'r' and quit 'q')
+        if hasattr(self.game_frame, 'overlay') and self.game_frame.overlay:
+            if event.keysym not in ('r', 'q'):
+                return
+
         key_map = {
             'w': self.game_frame.game_logic.move_up,
             'a': self.game_frame.game_logic.move_left,
