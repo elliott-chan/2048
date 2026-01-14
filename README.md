@@ -4,7 +4,7 @@ A small local implementation of the 2048 game (Tkinter GUI) with a simple offlin
 
 ## Quick Start
 
-Run the GUI: `python src/main.py`
+Run `python src/main.py`
 
 ## Differences from Original 2048
 
