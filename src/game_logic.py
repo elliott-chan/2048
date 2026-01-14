@@ -6,11 +6,7 @@ class Game2048():
         self.board = [[None for _ in range(size)] for _ in range(size)]
         self.score = 0
 
-        print(f"[DEBUG] Created empty {size}x{size} board:")
-        self.print_board()
         self.add_initial_tiles()
-        print("[DEBUG] Board after adding initial tiles:")
-        self.print_board()
     
     def print_board(self):
         for row in self.board:
@@ -18,41 +14,59 @@ class Game2048():
         print()
 
     def add_initial_tiles(self):
-        count = random.randint(2,16) # random number of '2's at random cells
-        print(f"[DEBUG] Adding {count} initial tile(s) of value 2.")
+        count = random.randint(2, 16)  # random number of '2's at random cells
         for _ in range(count):
             self.add_random_tile(value=2)
 
-    def move_left(self):
+    def move_left(self, event=None):
         moved = False
         for r in range(self.size):
             original_row = self.board[r][:]
+            # Compress: remove None values
             new_row = [cell for cell in original_row if cell is not None]
-            for i in range(1, len(new_row)):
-                if new_row[i] == new_row[i-1]:
-                    new_row[i-1] *= 2
-                    self.score += new_row[i-1]
-                    new_row[i] = None # type: ignore
-            new_row = [cell for cell in new_row if cell is not None]
-            new_row += [None] * (self.size - len(new_row))
-            if new_row != original_row:
-                self.board[r] = new_row
+            
+            # Merge: combine adjacent equal tiles (only once per tile)
+            merged_row = []
+            skip_next = False
+            for i in range(len(new_row)):
+                if skip_next:
+                    skip_next = False
+                    continue
+                    
+                # Check if we can merge with next tile
+                if i + 1 < len(new_row) and new_row[i] == new_row[i + 1]:
+                    merged_value = new_row[i] * 2
+                    merged_row.append(merged_value)
+                    self.score += merged_value
+                    skip_next = True  # Skip the next tile as it was merged
+                else:
+                    merged_row.append(new_row[i])
+            
+            # Pad with None to maintain size
+            merged_row += [None] * (self.size - len(merged_row))
+            
+            if merged_row != original_row:
+                self.board[r] = merged_row
                 moved = True
+                
         return moved
     
-    def move_right(self):
+    def move_right(self, event=None):
+        # Reverse, move left, reverse back
         self.board = [list(reversed(row)) for row in self.board]
         moved = self.move_left()
         self.board = [list(reversed(row)) for row in self.board]
         return moved
     
-    def move_up(self):
+    def move_up(self, event=None):
+        # Transpose, move left, transpose back
         self.board = [list(row) for row in zip(*self.board)]
         moved = self.move_left()
         self.board = [list(row) for row in zip(*self.board)]
         return moved
     
-    def move_down(self):
+    def move_down(self, event=None):
+        # Transpose, move right, transpose back
         self.board = [list(row) for row in zip(*self.board)]
         moved = self.move_right()
         self.board = [list(row) for row in zip(*self.board)]
@@ -61,12 +75,10 @@ class Game2048():
     def add_random_tile(self, value=None):
         empty_cells = [(r, c) for r in range(self.size) for c in range(self.size) if self.board[r][c] is None]
         if not empty_cells:
-            print("[DEBUG] No empty cells available to add a tile.")
             return
         r, c = random.choice(empty_cells)
         tile_value = value if value is not None else random.choice([2, 4])
-        self.board[r][c] = tile_value # type: ignore
-        print(f"[DEBUG] Added tile {tile_value} at position ({r}, {c})")
+        self.board[r][c] = tile_value
     
     def check_status(self):
         # First, check for a winning tile anywhere on the board
@@ -110,11 +122,17 @@ def main():
             print("--- GAME OVER ---")
             print(f"Final Score: {game.score}")
             break
+        elif status == "WIN":
+            print("--- YOU WIN! ---")
+            print(f"Score: {game.score}")
+            cont = input("Continue playing? (y/n): ").lower()
+            if cont != 'y':
+                break
 
         print(f"Current Score: {game.score}")
         game.print_board()
 
-        user_input = input("Enter move: ").lower()
+        user_input = input("Enter move (w/a/s/d) or 'q' to quit: ").lower()
 
         if user_input == 'q':
             break
@@ -132,4 +150,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    

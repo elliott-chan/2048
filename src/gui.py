@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from game_logic import Game2048
-from game_AI_local import GameAI
+from game_AI import GameAI
 
 # Themes
 COLORS = {
