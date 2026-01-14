@@ -131,14 +131,16 @@ class GameFrame(ttk.Frame):
         return True
     
     def game_over(self, status):
-        self.overlay = tk.Frame(self, bg="#686262", width=400, height=400)
-        self.overlay.place(relx=0.5, rely=0.5, anchor='center', width=420, height=420)
+        # Even smaller centered overlay so minimal obstruction to the board
+        self.overlay = tk.Frame(self, bg="#686262", width=220, height=110)
+        self.overlay.place(relx=0.5, rely=0.5, anchor='center', width=240, height=130)
         msg_text = "WINNER!" if status == "WIN" else "GAME OVER!"
         msg_color = COLORS["success"] if status == "WIN" else COLORS["danger"]
-        msg = tk.Label(self.overlay, text=msg_text, font=("Arial", 32, "bold"), bg="#686262", fg=msg_color)
-        msg.pack(expand=True)
-        btn = tk.Button(self.overlay, text="Restart", font=("Arial", 16, "bold"), bg=COLORS["accent"], fg=COLORS["accent_fg"], command=self.reset_game)
-        btn.pack(pady=20)
+        # Smaller font to match reduced overlay size
+        msg = tk.Label(self.overlay, text=msg_text, font=("Arial", 16, "bold"), bg="#686262", fg=msg_color)
+        msg.pack(expand=True, padx=6, pady=4)
+        btn = tk.Button(self.overlay, text="Restart", font=("Arial", 12, "bold"), bg=COLORS["accent"], fg=COLORS["accent_fg"], command=self.reset_game)
+        btn.pack(pady=6)
 
     def update_visuals(self):
         status = self.game_logic.check_status()
